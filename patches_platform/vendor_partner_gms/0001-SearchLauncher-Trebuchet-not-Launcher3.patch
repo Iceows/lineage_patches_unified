@@ -1,0 +1,34 @@
+From d458aada2e7f121ffb498b926bb6e03498034052 Mon Sep 17 00:00:00 2001
+From: Andy CrossGate Yan <GeForce8800Ultra@gmail.com>
+Date: Tue, 30 Nov 2021 12:58:00 +0000
+Subject: [PATCH] SearchLauncher: Trebuchet not Launcher3
+
+---
+ apps/SearchLauncher/Android.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/apps/SearchLauncher/Android.mk b/apps/SearchLauncher/Android.mk
+index a9f182a..6b90364 100644
+--- a/apps/SearchLauncher/Android.mk
++++ b/apps/SearchLauncher/Android.mk
+@@ -20,7 +20,7 @@ include $(BUILD_PREBUILT)
+ include $(CLEAR_VARS)
+ 
+ # Relative path for Launcher3 directory
+-LAUNCHER_PATH := ../../../../packages/apps/Launcher3
++LAUNCHER_PATH := ../../../../packages/apps/Trebuchet
+ 
+ LOCAL_STATIC_ANDROID_LIBRARIES := Launcher3CommonDepsLib
+ LOCAL_STATIC_JAVA_LIBRARIES := lib_launcherClient
+@@ -59,7 +59,7 @@ include $(BUILD_PACKAGE)
+ include $(CLEAR_VARS)
+ 
+ # Relative path for Launcher3 directory
+-LAUNCHER_PATH := ../../../../packages/apps/Launcher3
++LAUNCHER_PATH := ../../../../packages/apps/Trebuchet
+ 
+ LOCAL_STATIC_ANDROID_LIBRARIES := Launcher3CommonDepsLib
+ LOCAL_STATIC_JAVA_LIBRARIES := \
+-- 
+2.25.1
+
