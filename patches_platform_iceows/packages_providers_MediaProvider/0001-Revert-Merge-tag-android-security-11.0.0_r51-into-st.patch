@@ -1,0 +1,46 @@
+From 80da7f88b515dc0a508bfdc2c2ef4fd14c5ddd2c Mon Sep 17 00:00:00 2001
+From: Raphael Mounier <mounierr07@gmail.com>
+Date: Sun, 6 Feb 2022 13:05:41 +0100
+Subject: [PATCH] Revert "Merge tag 'android-security-11.0.0_r51' into
+ staging/lineage-18.1_merge-android-security-11.0.0_r51"
+
+This reverts commit 4d35608e535d29c7c88a95421958426b163e1724, reversing
+changes made to 24a14bb0721ed299ad5ef67fc3fdf49c250ae18d.
+---
+ .../providers/media/MediaProvider.java        | 20 -------------------
+ 1 file changed, 20 deletions(-)
+
+diff --git a/src/com/android/providers/media/MediaProvider.java b/src/com/android/providers/media/MediaProvider.java
+index a5e1baea..251e18d9 100644
+--- a/src/com/android/providers/media/MediaProvider.java
++++ b/src/com/android/providers/media/MediaProvider.java
+@@ -7062,26 +7062,6 @@ public class MediaProvider extends ContentProvider {
+                 if (mCallingIdentity.get().isOwned(id)) {
+                     return true;
+                 }
+-                break;
+-            default:
+-                // continue below
+-        }
+-
+-        // Check whether the uri is a specific table or not. Don't allow the global access to these
+-        // table uris
+-        switch (table) {
+-            case AUDIO_MEDIA:
+-            case IMAGES_MEDIA:
+-            case VIDEO_MEDIA:
+-            case DOWNLOADS:
+-            case FILES:
+-            case AUDIO_ALBUMS:
+-            case AUDIO_ARTISTS:
+-            case AUDIO_GENRES:
+-            case AUDIO_PLAYLISTS:
+-                return false;
+-            default:
+-                // continue below
+         }
+ 
+         // Outstanding grant means they get access
+-- 
+2.30.2
+
