@@ -1,16 +1,16 @@
-From 3564954ec43d58471027322f20627f4a24c4b777 Mon Sep 17 00:00:00 2001
+From 305f498a4d497a39d844ad884424bb10cca2e13f Mon Sep 17 00:00:00 2001
 From: Raphael Mounier <mounierr07@gmail.com>
-Date: Thu, 24 Feb 2022 14:53:03 +0100
-Subject: [PATCH] Enable key authentification by property
+Date: Wed, 9 Mar 2022 19:05:22 +0100
+Subject: [PATCH] Enable software key authentification by property
 
-Enable key authentification by setting, property ro.crypto.keyauth.enable to 1
+Enable software key authentification by setting ro.crypto.keyauth.enable to 1
 ---
  KeyStorage.cpp | 18 ++++++++++++++++++
- KeyStorage.h   |  7 ++++---
- 2 files changed, 22 insertions(+), 3 deletions(-)
+ KeyStorage.h   |  6 +++---
+ 2 files changed, 21 insertions(+), 3 deletions(-)
 
 diff --git a/KeyStorage.cpp b/KeyStorage.cpp
-index b64ddea..d11c0a8 100644
+index b64ddea..040ad73 100644
 --- a/KeyStorage.cpp
 +++ b/KeyStorage.cpp
 @@ -81,6 +81,24 @@ static const char* kFn_secdiscardable = "secdiscardable";
@@ -30,7 +30,7 @@ index b64ddea..d11c0a8 100644
 +          // Set software hard code key
 +          LOG(INFO) << "Enable key authentification - ro.crypto.keyauth.enable=1";
 +          secret = "N0BZGwYKev0auvSYIocce4MB876RES8C";
-+        } 
++        }
 +      }
 +}
 +
@@ -39,14 +39,12 @@ index b64ddea..d11c0a8 100644
      if (actual != expected) {
          LOG(ERROR) << "Wrong number of bytes in " << kind << ", expected " << expected << " got "
 diff --git a/KeyStorage.h b/KeyStorage.h
-index 5228f08..2bdcc60 100644
+index 5228f08..f0a10f5 100644
 --- a/KeyStorage.h
 +++ b/KeyStorage.h
-@@ -30,13 +30,14 @@ namespace vold {
- // binary needed to unlock.
+@@ -31,12 +31,12 @@ namespace vold {
  // If only "secret" is nonempty, it is used to decrypt in a non-Keymaster process.
  class KeyAuthentication {
-+
    public:
 -    KeyAuthentication(const std::string& t, const std::string& s) : token{t}, secret{s} {};
 +    KeyAuthentication(const std::string& t, const std::string& s);
