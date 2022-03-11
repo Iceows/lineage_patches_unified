@@ -1,0 +1,335 @@
+From e0cca92a98ba4c549f8b0487a44496799cb76b5f Mon Sep 17 00:00:00 2001
+From: vgdn1942 <vgdn1942@gmail.com>
+Date: Mon, 16 Aug 2021 19:19:42 +0300
+Subject: [PATCH] Add preference for disable pSIM
+
+Change-Id: I7df9f8526a68c3c9fadcf98d8f02004c97416921
+---
+ AndroidManifest.xml                           |   6 +
+ res/values-ru/strings.xml                     |   6 +
+ res/values/arrays.xml                         |  14 ++
+ res/values/strings.xml                        |   8 ++
+ res/xml/network_and_internet.xml              |   8 ++
+ src/com/android/settings/SettingsOnBoot.java  |  65 +++++++++
+ .../ActiveSimPreferenceController.java        | 130 ++++++++++++++++++
+ .../network/NetworkDashboardFragment.java     |   1 +
+ 8 files changed, 239 insertions(+)
+ create mode 100644 src/com/android/settings/SettingsOnBoot.java
+ create mode 100644 src/com/android/settings/network/ActiveSimPreferenceController.java
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 6ead75a878..7cc7a9badc 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -171,6 +171,12 @@
+             </intent-filter>
+         </receiver>
+ 
++        <receiver android:name=".SettingsOnBoot">
++            <intent-filter>
++                <action android:name="android.intent.action.BOOT_COMPLETED"/>
++            </intent-filter>
++        </receiver>
++
+         <activity android:name=".SubSettings"/>
+ 
+         <activity android:name=".Settings$CreateShortcutActivity"
+diff --git a/res/values-ru/strings.xml b/res/values-ru/strings.xml
+index addb70c25f..883a0de56d 100644
+--- a/res/values-ru/strings.xml
++++ b/res/values-ru/strings.xml
+@@ -5144,6 +5144,12 @@
+     <string name="keywords_media_controls" msgid="8345490568291778638">"Медиа"</string>
+     <string name="connected_device_see_all_summary" msgid="2056010318537268108">"Будет включен модуль Bluetooth"</string>
+     <string name="aware_summary_when_bedtime_on" msgid="2063856008597376344">"Недоступно в ночном режиме"</string>
++    <string name="active_sim_tittle">"Активные SIM-карты"</string>
++    <string name="active_sim_summary">"Выберите SIM-карты, которые будут включены"</string>
++    <string name="active_sim_both">"Обе активны"</string>
++    <string name="active_sim_one">"Только первая"</string>
++    <string name="active_sim_two">"Только вторая"</string>
++    <string name="active_sim_none">"Обе отключены"</string>
+     <string name="bluetooth_message_access_notification_content" msgid="2986108412562309009">"Неизвестное устройство запрашивает доступ к вашим сообщениям. Нажмите, чтобы узнать больше."</string>
+     <string name="bluetooth_message_access_dialog_title" msgid="9009836130395061579">"Предоставить доступ к сообщениям?"</string>
+     <string name="bluetooth_message_access_dialog_content" msgid="2304761898608701739">"Неизвестное устройство Bluetooth (<xliff:g id="DEVICE_NAME_0">%1$s</xliff:g>) запрашивает доступ к вашим сообщениям.\n\nЭто ваше первое подключение к устройству \"<xliff:g id="DEVICE_NAME_1">%2$s</xliff:g>\"."</string>
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index 34ba122d2c..4550883204 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -1502,4 +1502,18 @@
+         <item>@string/rtt_settings_always_visible</item>
+     </string-array>
+ 
++    <string-array name="active_sim_entries" translatable="false">
++        <item>@string/active_sim_both</item>
++        <item>@string/active_sim_one</item>
++        <item>@string/active_sim_two</item>
++        <item>@string/active_sim_none</item>
++    </string-array>
++
++    <string-array name="active_sim_values" translatable="false">
++        <item>0</item>
++        <item>1</item>
++        <item>2</item>
++        <item>3</item>
++    </string-array>
++
+ </resources>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 80063b6a4c..e8b53573b7 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -12191,6 +12191,14 @@
+     <!-- Summary for preference when Bedtime mode is on [CHAR LIMIT=NONE] -->
+     <string name="aware_summary_when_bedtime_on">Unavailable because bedtime mode is on</string>
+ 
++    <string name="active_sim_tittle">Active SIM cards</string>
++    <string name="active_sim_summary">Select SIM cards to be included</string>
++
++    <string name="active_sim_both">Both SIM cards</string>
++    <string name="active_sim_one">Only the first</string>
++    <string name="active_sim_two">Only the second</string>
++    <string name="active_sim_none">Both disabled</string>
++
+     <!-- Bluetooth message permission alert for notification content [CHAR LIMIT=none] -->
+     <string name="bluetooth_message_access_notification_content">A device wants to access your messages. Tap for details.</string>
+     <!-- Bluetooth message permission alert for dialog title [CHAR LIMIT=none] -->
+diff --git a/res/xml/network_and_internet.xml b/res/xml/network_and_internet.xml
+index 6bf6dbaccf..b21e592274 100644
+--- a/res/xml/network_and_internet.xml
++++ b/res/xml/network_and_internet.xml
+@@ -118,6 +118,14 @@
+         android:positiveButtonText="@string/save"
+         android:negativeButtonText="@android:string/cancel" />
+ 
++    <ListPreference
++        android:key="active_sim_settings"
++        android:title="@string/active_sim_tittle"
++        android:dialogTitle="@string/active_sim_summary"
++        android:order="22"
++        android:entries="@array/active_sim_entries"
++        android:entryValues="@array/active_sim_values" />
++
+     <Preference
+         android:fragment="com.android.settings.network.AdaptiveConnectivitySettings"
+         android:key="adaptive_connectivity"
+diff --git a/src/com/android/settings/SettingsOnBoot.java b/src/com/android/settings/SettingsOnBoot.java
+new file mode 100644
+index 0000000000..e83d4d0ce3
+--- /dev/null
++++ b/src/com/android/settings/SettingsOnBoot.java
+@@ -0,0 +1,65 @@
++/*
++ * Copyright (C) 2021 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.settings;
++
++import android.content.BroadcastReceiver;
++import android.content.Context;
++import android.content.Intent;
++import android.os.Build;
++import android.os.SystemProperties;
++import android.telephony.TelephonyManager;
++import android.util.Log;
++
++public class SettingsOnBoot extends BroadcastReceiver {
++    private static final String ACTIVE_SIM_MODE_PROPERTY = "persist.sim.activesim";
++
++    @Override
++    public void onReceive(Context context, Intent broadcast) {
++        final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
++        activeSimSettingSetup(context, tm);
++    }
++
++    private void activeSimSettingSetup(Context context, TelephonyManager tm) {
++        if (tm == null) {
++            return;
++        }
++        final String strValue = SystemProperties.get(ACTIVE_SIM_MODE_PROPERTY);
++        final int intValue = Integer.valueOf(strValue);
++        switch (intValue) {
++            case 0:
++                tm.setSimPowerStateForSlot(0, 1);
++                tm.setSimPowerStateForSlot(1, 1);
++                break;
++            case 1:
++                tm.setSimPowerStateForSlot(0, 1);
++                tm.setSimPowerStateForSlot(1, 0);
++                break;
++            case 2:
++                tm.setSimPowerStateForSlot(0, 0);
++                tm.setSimPowerStateForSlot(1, 1);
++                break;
++            case 3:
++                tm.setSimPowerStateForSlot(0, 0);
++                tm.setSimPowerStateForSlot(1, 0);
++                break;
++            default:
++                tm.setSimPowerStateForSlot(0, 1);
++                tm.setSimPowerStateForSlot(1, 1);
++                break;
++        }
++    }
++}
+diff --git a/src/com/android/settings/network/ActiveSimPreferenceController.java b/src/com/android/settings/network/ActiveSimPreferenceController.java
+new file mode 100644
+index 0000000000..5dd5238f85
+--- /dev/null
++++ b/src/com/android/settings/network/ActiveSimPreferenceController.java
+@@ -0,0 +1,130 @@
++/*
++ * Copyright (C) 2017 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.settings.network;
++
++import android.content.Context;
++import android.os.Build;
++import android.os.SystemProperties;
++import android.telephony.SubscriptionManager;
++import android.telephony.TelephonyManager;
++import android.text.TextUtils;
++import android.util.Log;
++
++import androidx.preference.ListPreference;
++import androidx.preference.Preference;
++import androidx.preference.PreferenceScreen;
++import androidx.preference.SwitchPreference;
++
++import com.android.settings.R;
++import com.android.settings.core.PreferenceControllerMixin;
++import com.android.settings.core.BasePreferenceController;
++
++public class ActiveSimPreferenceController extends BasePreferenceController
++        implements Preference.OnPreferenceChangeListener, PreferenceControllerMixin {
++    private static final String TAG = "ActiveSimPreferenceController";
++
++    private static final String PREFERENCE_KEY = "active_sim_settings";
++    private static final String ACTIVE_SIM_MODE_PROPERTY = "persist.sim.activesim";
++    private static final String ACTIVE_SIM_DEFAULT_INDEX = "0";
++
++    private final String[] mListValues;
++    private final String[] mListEntries;
++
++    private TelephonyManager mTelephonyManager;
++    private SubscriptionManager mSubscriptionManager;
++    private Preference mPreference;
++
++    public ActiveSimPreferenceController(Context context) {
++        super(context, PREFERENCE_KEY);
++        mTelephonyManager = context.getSystemService(TelephonyManager.class);
++        mSubscriptionManager = context.getSystemService(SubscriptionManager.class);
++        mListValues = context.getResources().getStringArray(R.array.active_sim_values);
++        mListEntries = context.getResources().getStringArray(R.array.active_sim_entries);
++    }
++
++    @Override
++    public void displayPreference(PreferenceScreen screen) {
++        super.displayPreference(screen);
++
++        mPreference = screen.findPreference(getPreferenceKey());
++        if (SubscriptionUtil.showToggleForPhysicalSim(mSubscriptionManager)) {
++            mPreference.setVisible(false);
++        } else {
++            mPreference.setVisible(true);
++        }
++    }
++
++    public String getDefaultModeIndex() {
++        return ACTIVE_SIM_DEFAULT_INDEX;
++    }
++
++    @Override
++    public int getAvailabilityStatus() {
++        return AVAILABLE;
++    }
++
++    @Override
++    public String getPreferenceKey() {
++        return PREFERENCE_KEY;
++    }
++
++    @Override
++    public boolean onPreferenceChange(Preference preference, Object newValue) {
++        int intValue = Integer.valueOf(newValue.toString());
++        SystemProperties.set(ACTIVE_SIM_MODE_PROPERTY, newValue.toString());
++        switch (intValue) {
++            case 0:
++                mTelephonyManager.setSimPowerStateForSlot(0, 1);
++                mTelephonyManager.setSimPowerStateForSlot(1, 1);
++                break;
++            case 1:
++                mTelephonyManager.setSimPowerStateForSlot(0, 1);
++                mTelephonyManager.setSimPowerStateForSlot(1, 0);
++                break;
++            case 2:
++                mTelephonyManager.setSimPowerStateForSlot(0, 0);
++                mTelephonyManager.setSimPowerStateForSlot(1, 1);
++                break;
++            case 3:
++                mTelephonyManager.setSimPowerStateForSlot(0, 0);
++                mTelephonyManager.setSimPowerStateForSlot(1, 0);
++                break;
++            default:
++                mTelephonyManager.setSimPowerStateForSlot(0, 1);
++                mTelephonyManager.setSimPowerStateForSlot(1, 1);
++                break;
++        }
++        updateState(mPreference);
++        return true;
++    }
++
++    @Override
++    public void updateState(Preference preference) {
++        final ListPreference listPreference = (ListPreference) preference;
++        final String currentValue = SystemProperties.get(ACTIVE_SIM_MODE_PROPERTY, getDefaultModeIndex());
++
++        int index = Integer.valueOf(getDefaultModeIndex());
++        for (int i = 0; i < mListValues.length; i++) {
++            if (TextUtils.equals(currentValue, mListValues[i])) {
++                index = i;
++                break;
++            }
++        }
++        listPreference.setValue(mListValues[index]);
++        listPreference.setSummary(mListEntries[index]);
++    }
++}
+diff --git a/src/com/android/settings/network/NetworkDashboardFragment.java b/src/com/android/settings/network/NetworkDashboardFragment.java
+index db704ae850..d469564aba 100644
+--- a/src/com/android/settings/network/NetworkDashboardFragment.java
++++ b/src/com/android/settings/network/NetworkDashboardFragment.java
+@@ -120,6 +120,7 @@ public class NetworkDashboardFragment extends DashboardFragment implements
+         controllers.add(mobilePlanPreferenceController);
+         controllers.add(wifiPreferenceController);
+         controllers.add(privateDnsPreferenceController);
++        controllers.add(new ActiveSimPreferenceController(context));
+         return controllers;
+     }
+ 
+-- 
+2.20.1
